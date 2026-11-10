@@ -7,6 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
+import java.lang.reflect.Method;
 import rikka.shizuku.Shizuku;
 
 public class MainActivity extends AppCompatActivity {
@@ -67,7 +68,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            Shizuku.newProcess(new String[]{"sh", "-c", comando}, null, null);
+            // Acceso mediante reflexión para omitir la restricción private de Shizuku 13.x
+            Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+            newProcessMethod.setAccessible(true);
+            newProcessMethod.invoke(null, new String[]{"sh", "-c", comando}, null, null);
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
