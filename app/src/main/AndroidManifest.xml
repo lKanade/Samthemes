@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permiso para vincular con Shizuku -->
+    <!-- Permiso para conectar con Shizuku -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
+    <!-- Registro del Overlay para SystemUI -->
     <overlay
         android:targetPackage="com.android.systemui"
-        android:targetName="SamThemes"
+        android:targetName="SystemUI"
         android:isStatic="false"
         android:priority="99" />
 
-    <application android:hasCode="false" />
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="UI Themes Engine"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.DayNight">
+
+        <!-- Genera el icono en el cajón de aplicaciones -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
 
 </manifest>
