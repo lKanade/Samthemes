@@ -3,8 +3,6 @@
 
     <overlay
         android:targetPackage="com.android.systemui"
-        android:targetName="SystemUI"
-        android:category="android.theme.customization.icon_pack.systemui"
         android:isStatic="false"
         android:priority="99" />
 
