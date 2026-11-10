@@ -7,7 +7,6 @@
         <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
-    <!-- Overlay dirigido a SystemUI con prioridad alta -->
     <overlay
         android:targetPackage="com.android.systemui"
         android:targetName="SystemUI"
@@ -20,7 +19,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
-        <!-- Metadato requerido por Samsung para aceptar paquetes de temas/iconos -->
         <meta-data
             android:name="com.google.android.theme.customization.overlay_definition"
             android:value="true" />
