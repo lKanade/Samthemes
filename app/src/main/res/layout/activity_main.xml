@@ -95,15 +95,16 @@
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:text="Aplicar Tema"
-                        android:layout_marginEnd="8dp" />
+                        android:layout_marginEnd="6dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnDesactivar"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Desactivar" />
+                        android:text="Desactivar"
+                        android:layout_marginStart="6dp"
+                        app:backgroundTint="#757575" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -131,10 +132,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnReiniciarUI"
-                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Reiniciar SystemUI" />
+                    android:text="Reiniciar SystemUI"
+                    app:backgroundTint="#3F51B5" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
