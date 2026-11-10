@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
-        MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico); // El nuevo botón
+        MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico);
 
         mostrarCrashPrevio();
 
@@ -72,14 +72,17 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
 
-        // Escáner de diagnóstico 100% independiente
+        // Escáner de diagnóstico corregido para saltar el bloqueo de Shizuku
         btnDiagnostico.setOnClickListener(v -> {
             if (!Shizuku.pingBinder()) {
                 Toast.makeText(this, "Shizuku no está activo", Toast.LENGTH_SHORT).show();
                 return;
             }
             try {
-                Process p = Shizuku.newProcess(new String[]{"sh", "-c", "cmd overlay list com.android.systemui"}, null, null);
+                Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+                newProcessMethod.setAccessible(true);
+                Process p = (Process) newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", "cmd overlay list com.android.systemui"}, null, null });
+                
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 StringBuilder output = new StringBuilder();
                 String line;
@@ -101,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                         .setPositiveButton("Cerrar", null)
                         .show();
             } catch (Exception e) {
-                Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Error de diagnóstico: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
