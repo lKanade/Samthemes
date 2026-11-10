@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permiso para conectar con Shizuku -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
-    <!-- Registro del Overlay para SystemUI -->
     <overlay
         android:targetPackage="com.android.systemui"
         android:targetName="SystemUI"
@@ -15,9 +13,8 @@
         android:allowBackup="true"
         android:label="UI Themes Engine"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.DayNight">
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
 
-        <!-- Genera el acceso en el cajón de aplicaciones -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
