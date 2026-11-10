@@ -3,6 +3,7 @@
 
     <overlay
         android:targetPackage="com.android.systemui"
+        android:targetName="SamThemes"
         android:isStatic="false"
         android:priority="99" />
 
