@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Permiso para conectar con Shizuku -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
+    <!-- OBLIGATORIO EN ANDROID 11+: Permite a la app detectar el paquete de Shizuku -->
+    <queries>
+        <package android:name="moe.shizuku.privileged.api" />
+    </queries>
+
+    <!-- Registro del Overlay para SystemUI -->
     <overlay
         android:targetPackage="com.android.systemui"
         android:targetName="SystemUI"
@@ -14,6 +21,15 @@
         android:label="UI Themes Engine"
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <!-- Proveedor de Shizuku registrado explícitamente -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="com.uithemes.app.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <activity
             android:name=".MainActivity"
