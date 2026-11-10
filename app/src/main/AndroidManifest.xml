@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        <!-- Identificadores de Hex Installer -->
-<meta-data android:name="project_hex" android:value="true" />
-<meta-data android:name="hex_plugin" android:value="true" />
-<meta-data android:name="hex_author" android:value="Kanade" />
-<meta-data android:name="hex_theme_name" android:value="SamThemes" />
-<meta-data android:name="hex_description" android:value="Plugin S24 Ultra" />
-        
         android:allowBackup="true"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:label="UiThemes Flotante"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:label="SamThemes"
+        android:supportsRtl="true">
+
+        <!-- Identificadores oficiales de Hex Installer -->
+        <meta-data android:name="project_hex" android:value="true" />
+        <meta-data android:name="hex_plugin" android:value="true" />
+        <meta-data android:name="hex_author" android:value="Kanade" />
+        <meta-data android:name="hex_theme_name" android:value="SamThemes" />
+        <meta-data android:name="hex_description" android:value="Plugin S24 Ultra" />
 
         <activity
             android:name=".MainActivity"
@@ -30,6 +28,7 @@
             android:name=".FloatingWindowService"
             android:enabled="true"
             android:exported="false" />
+
     </application>
 
 </manifest>
