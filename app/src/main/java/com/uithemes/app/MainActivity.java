@@ -24,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Capturador automático de errores
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             try {
                 StringWriter sw = new StringWriter();
@@ -54,25 +53,25 @@ public class MainActivity extends AppCompatActivity {
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // Habilita el overlay y reinicia SystemUI forzadamente en One UI
+        // Activa el overlay y fuerza el reinicio de la barra de estado
         btnActivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay enable --user 0 com.uithemes.app && pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
+            String cmd = "cmd overlay enable --user 0 com.uithemes.app && am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
-            Toast.makeText(this, "Aplicando tema...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Aplicando tema e iconos...", Toast.LENGTH_SHORT).show();
         });
 
-        // Deshabilita el overlay y reinicia SystemUI
+        // Desactiva el overlay y reinicia SystemUI
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay disable --user 0 com.uithemes.app && pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
+            String cmd = "cmd overlay disable --user 0 com.uithemes.app && am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
 
-        // Reinicio manual de SystemUI
+        // Botón de herramientas / Reiniciar UI funcional
         btnReiniciarUI.setOnClickListener(v -> {
-            String cmd = "pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
+            String cmd = "am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
-            Toast.makeText(this, "Reiniciando interfaz...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -88,14 +87,14 @@ public class MainActivity extends AppCompatActivity {
                 if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                     txtShizukuStatus.setText("Shizuku: Conectado");
                     txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
-                    Toast.makeText(this, "Shizuku ya está conectado y autorizado", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Shizuku ya está conectado", Toast.LENGTH_SHORT).show();
                 } else {
                     Shizuku.requestPermission(SHIZUKU_CODE);
                 }
             } else {
                 txtShizukuStatus.setText("Shizuku: Desconectado");
                 txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
-                Toast.makeText(this, "Inicia el servicio en la app de Shizuku primero", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Inicia el servicio en la app de Shizuku", Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
