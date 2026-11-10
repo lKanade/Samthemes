@@ -1,23 +1,27 @@
 package com.uithemes.app
 
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
-import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
 import rikka.shizuku.Shizuku
 
 class MainActivity : AppCompatActivity() {
 
     private val SHIZUKU_CODE = 100
+    private lateinit var txtShizukuStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val btnActivar = findViewById<Button>(R.id.btnActivar)
-        val btnDesactivar = findViewById<Button>(R.id.btnDesactivar)
-        val btnReiniciarUI = findViewById<Button>(R.id.btnReiniciarUI)
+        txtShizukuStatus = findViewById(R.id.txtShizukuStatus)
+        val btnActivar = findViewById<MaterialButton>(R.id.btnActivar)
+        val btnDesactivar = findViewById<MaterialButton>(R.id.btnDesactivar)
+        val btnReiniciarUI = findViewById<MaterialButton>(R.id.btnReiniciarUI)
 
         verificarPermisoShizuku()
 
@@ -41,11 +45,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun verificarPermisoShizuku() {
         if (Shizuku.pingBinder()) {
-            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                txtShizukuStatus.text = "Shizuku: Conectado"
+                txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"))
+            } else {
+                txtShizukuStatus.text = "Shizuku: Sin permiso"
+                txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"))
                 Shizuku.requestPermission(SHIZUKU_CODE)
             }
         } else {
-            Toast.makeText(this, "Shizuku no está iniciado", Toast.LENGTH_LONG).show()
+            txtShizukuStatus.text = "Shizuku: Desconectado"
+            txtShizukuStatus.setTextColor(Color.parseColor("#F44336"))
         }
     }
 
