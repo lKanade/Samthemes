@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Encabezado -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -28,7 +27,6 @@
             android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="24dp" />
 
-        <!-- Tarjeta de Estado de Shizuku + Botón Manual -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,7 +59,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Tarjeta de Control del Tema -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -116,7 +113,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Herramientas -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -143,8 +139,16 @@
                     android:layout_height="wrap_content"
                     android:text="Reiniciar SystemUI"
                     app:backgroundTint="#3F51B5" />
+                    
+                <!-- Nuevo botón de diagnóstico interno -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDiagnostico"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ver Estado del Parche"
+                    android:layout_marginTop="8dp"
+                    app:backgroundTint="#FF9800" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
     </LinearLayout>
 </ScrollView>
