@@ -52,21 +52,21 @@ public class MainActivity extends AppCompatActivity {
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // COMANDOS CORREGIDOS: Se usa pidof y kill -9 para un reinicio limpio sin ventana de error
+        // COMANDOS CORREGIDOS: killall es nativo y reinicia la barra limpio sin ventanas de error
         btnActivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay enable --user 0 com.uithemes.app; pidof com.android.systemui | xargs kill -9";
+            String cmd = "cmd overlay enable --user 0 com.uithemes.app; killall com.android.systemui || kill -9 $(pidof com.android.systemui)";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Aplicando tema e iconos...", Toast.LENGTH_SHORT).show();
         });
 
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay disable --user 0 com.uithemes.app; pidof com.android.systemui | xargs kill -9";
+            String cmd = "cmd overlay disable --user 0 com.uithemes.app; killall com.android.systemui || kill -9 $(pidof com.android.systemui)";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
 
         btnReiniciarUI.setOnClickListener(v -> {
-            String cmd = "pidof com.android.systemui | xargs kill -9";
+            String cmd = "killall com.android.systemui || kill -9 $(pidof com.android.systemui)";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
