@@ -1,5 +1,9 @@
 package com.uithemes.app;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -7,6 +11,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import rikka.shizuku.Shizuku;
 
@@ -17,6 +24,23 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Capturador automático de crashes
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            try {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                throwable.printStackTrace(pw);
+                String stackTrace = sw.toString();
+
+                getSharedPreferences("crash_prefs", MODE_PRIVATE)
+                        .edit()
+                        .putString("last_crash_log", stackTrace)
+                        .apply();
+            } catch (Exception ignored) {}
+
+            System.exit(1);
+        });
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -25,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
 
+        mostrarCrashPrevio();
         verificarPermisoShizuku();
 
         btnActivar.setOnClickListener(v -> {
@@ -43,6 +68,30 @@ public class MainActivity extends AppCompatActivity {
             ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Reiniciando interfaz...", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void mostrarCrashPrevio() {
+        SharedPreferences prefs = getSharedPreferences("crash_prefs", MODE_PRIVATE);
+        String lastCrash = prefs.getString("last_crash_log", null);
+
+        if (lastCrash != null) {
+            // Elimina el registro para no volver a mostrarlo en futuros inicios normales
+            prefs.edit().remove("last_crash_log").apply();
+
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("⚠️ Log de Error Capturado")
+                    .setMessage(lastCrash)
+                    .setPositiveButton("Copiar Log", (dialog, which) -> {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("Crash Log", lastCrash);
+                        if (clipboard != null) {
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(this, "Log copiado al portapapeles", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cerrar", null)
+                    .show();
+        }
     }
 
     private void verificarPermisoShizuku() {
