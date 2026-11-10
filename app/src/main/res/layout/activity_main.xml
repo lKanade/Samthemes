@@ -28,7 +28,7 @@
             android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="24dp" />
 
-        <!-- Estado de Shizuku -->
+        <!-- Tarjeta de Estado de Shizuku + Botón Manual -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,8 +49,15 @@
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:text="Shizuku: Verificando..."
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSolicitarPermiso"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Conectar" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
