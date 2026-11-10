@@ -52,17 +52,17 @@ public class MainActivity extends AppCompatActivity {
 
         mostrarCrashPrevio();
 
-        // Botón manual para solicitar permisos o refrescar estado
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
+        // Comandos nativos cmd overlay para One UI en Samsung
         btnActivar.setOnClickListener(v -> {
-            String cmd = "settings put secure theme_customization_overlay_packages '{\"android.theme.customization.icon_pack.systemui\":\"com.uithemes.app\"}' && am crash com.android.systemui";
+            String cmd = "cmd overlay enable --user 0 com.uithemes.app && am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Aplicando tema...", Toast.LENGTH_SHORT).show();
         });
 
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "settings put secure theme_customization_overlay_packages '{}' && am crash com.android.systemui";
+            String cmd = "cmd overlay disable --user 0 com.uithemes.app && am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
@@ -76,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Re-verifica automáticamente el estado al regresar a la app
         verificarPermisoShizuku();
     }
 
