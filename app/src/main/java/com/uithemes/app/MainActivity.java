@@ -54,21 +54,24 @@ public class MainActivity extends AppCompatActivity {
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // Comandos nativos cmd overlay para One UI en Samsung
+        // Habilita el overlay y reinicia SystemUI forzadamente en One UI
         btnActivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay enable --user 0 com.uithemes.app && am crash com.android.systemui";
+            String cmd = "cmd overlay enable --user 0 com.uithemes.app && pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Aplicando tema...", Toast.LENGTH_SHORT).show();
         });
 
+        // Deshabilita el overlay y reinicia SystemUI
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay disable --user 0 com.uithemes.app && am crash com.android.systemui";
+            String cmd = "cmd overlay disable --user 0 com.uithemes.app && pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
 
+        // Reinicio manual de SystemUI
         btnReiniciarUI.setOnClickListener(v -> {
-            ejecutarComandoShizuku("am crash com.android.systemui");
+            String cmd = "pkill -f com.android.systemui || killall com.android.systemui || am crash com.android.systemui";
+            ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Reiniciando interfaz...", Toast.LENGTH_SHORT).show();
         });
     }
