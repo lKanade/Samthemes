@@ -46,17 +46,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void verificarPermisoShizuku() {
-        if (Shizuku.pingBinder()) {
-            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                txtShizukuStatus.setText("Shizuku: Conectado");
-                txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
+        try {
+            if (Shizuku.pingBinder()) {
+                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                    txtShizukuStatus.setText("Shizuku: Conectado");
+                    txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
+                } else {
+                    txtShizukuStatus.setText("Shizuku: Sin permiso");
+                    txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"));
+                    Shizuku.requestPermission(SHIZUKU_CODE);
+                }
             } else {
-                txtShizukuStatus.setText("Shizuku: Sin permiso");
-                txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"));
-                Shizuku.requestPermission(SHIZUKU_CODE);
+                txtShizukuStatus.setText("Shizuku: Desconectado");
+                txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
             }
-        } else {
-            txtShizukuStatus.setText("Shizuku: Desconectado");
+        } catch (Exception e) {
+            txtShizukuStatus.setText("Shizuku: Error de conexión");
             txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
         }
     }
@@ -68,10 +73,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            // Acceso mediante reflexión para omitir la restricción private de Shizuku 13.x
             Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
             newProcessMethod.setAccessible(true);
-            newProcessMethod.invoke(null, new String[]{"sh", "-c", comando}, null, null);
+            newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", comando}, null, null });
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
