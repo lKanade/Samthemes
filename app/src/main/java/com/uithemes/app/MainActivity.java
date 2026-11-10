@@ -1,7 +1,5 @@
 package com.uithemes.app;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -12,8 +10,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -26,21 +22,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            try {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                throwable.printStackTrace(pw);
-                String stackTrace = sw.toString();
-
-                getSharedPreferences("crash_prefs", Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("last_crash_log", stackTrace)
-                        .apply();
-            } catch (Exception ignored) {}
-            System.exit(1);
-        });
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -49,63 +30,25 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
-        MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico);
-
-        mostrarCrashPrevio();
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
+        // Creación e inyección del Fabricated Overlay en tiempo de ejecución
         btnActivar.setOnClickListener(v -> {
-            ejecutarComandoShizuku("cmd overlay enable --user 0 com.uithemes.app");
-            ejecutarComandoShizuku("am crash com.android.systemui");
-            Toast.makeText(this, "Aplicando tema e iconos...", Toast.LENGTH_SHORT).show();
+            ejecutarFabricatedOverlay();
+            Toast.makeText(this, "Inyectando Fabricated Overlay...", Toast.LENGTH_SHORT).show();
         });
 
+        // Desactivar y eliminar el overlay virtual de la memoria
         btnDesactivar.setOnClickListener(v -> {
-            ejecutarComandoShizuku("cmd overlay disable --user 0 com.uithemes.app");
-            ejecutarComandoShizuku("am crash com.android.systemui");
-            Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
+            String cmd = "cmd overlay remove --user 0 com.uithemes.fabricated.wifi && am crash com.android.systemui";
+            ejecutarComandoShizuku(cmd);
+            Toast.makeText(this, "Eliminando overlay virtual...", Toast.LENGTH_SHORT).show();
         });
 
         btnReiniciarUI.setOnClickListener(v -> {
             ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
-        });
-
-        // Escáner de diagnóstico corregido para saltar el bloqueo de Shizuku
-        btnDiagnostico.setOnClickListener(v -> {
-            if (!Shizuku.pingBinder()) {
-                Toast.makeText(this, "Shizuku no está activo", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            try {
-                Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
-                newProcessMethod.setAccessible(true);
-                Process p = (Process) newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", "cmd overlay list com.android.systemui"}, null, null });
-                
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                StringBuilder output = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("uithemes")) {
-                        output.append(line.trim()).append("\n");
-                    }
-                }
-                p.waitFor();
-                
-                String resultado = output.toString().trim();
-                if (resultado.isEmpty()) {
-                    resultado = "No se encontró el parche en el sistema. Android lo está ignorando por completo.";
-                }
-
-                new MaterialAlertDialogBuilder(this)
-                        .setTitle("Diagnóstico del Parche")
-                        .setMessage(resultado)
-                        .setPositiveButton("Cerrar", null)
-                        .show();
-            } catch (Exception e) {
-                Toast.makeText(this, "Error de diagnóstico: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
         });
     }
 
@@ -152,6 +95,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void ejecutarFabricatedOverlay() {
+        if (!Shizuku.pingBinder()) {
+            Toast.makeText(this, "Shizuku no está activo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Comando nativo de Android para crear un Fabricated Overlay al vuelo sin APK
+        String comandoCrear = "cmd overlay fabricate --target com.android.systemui --name com.uithemes.fabricated.wifi com.android.systemui:id/wifi_icon 0x11 0x7f070001";
+        String comandoHabilitar = "cmd overlay enable --user 0 com.uithemes.fabricated.wifi";
+        String comandoReiniciar = "am crash com.android.systemui";
+
+        ejecutarComandoShizuku(comandoCrear + " && " + comandoHabilitar + " && " + comandoReiniciar);
+    }
+
     private void ejecutarComandoShizuku(String comando) {
         try {
             Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
@@ -159,20 +116,7 @@ public class MainActivity extends AppCompatActivity {
             newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", comando}, null, null });
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private void mostrarCrashPrevio() {
-        SharedPreferences prefs = getSharedPreferences("crash_prefs", Context.MODE_PRIVATE);
-        String lastCrash = prefs.getString("last_crash_log", null);
-
-        if (lastCrash != null) {
-            prefs.edit().remove("last_crash_log").apply();
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle("⚠️ Log de Error Capturado")
-                    .setMessage(lastCrash)
-                    .setPositiveButton("Cerrar", null)
-                    .show();
+            Toast.makeText(this, "Error de ejecución: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 }
