@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Aquí meteremos los colores de los Quick Settings después -->
+    <!-- Color del boton cuando esta encendido -->
+    <color name="qs_tile_active_background">#FF007AFF</color>
+    
+    <!-- Color del icono adentro del boton encendido -->
+    <color name="qs_tile_active_icon">#FFFFFFFF</color>
+    
+    <!-- Color del boton cuando esta apagado -->
+    <color name="qs_tile_inactive_background">#FF3A3A3C</color>
+    
+    <!-- Color del icono adentro del boton apagado -->
+    <color name="qs_tile_inactive_icon">#FF98989D</color>
 </resources>
