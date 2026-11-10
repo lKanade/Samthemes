@@ -12,6 +12,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -47,12 +49,12 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
+        MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico); // El nuevo botón
 
         mostrarCrashPrevio();
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // COMANDOS SEPARADOS: Garantiza que el reinicio se ejecute sí o sí
         btnActivar.setOnClickListener(v -> {
             ejecutarComandoShizuku("cmd overlay enable --user 0 com.uithemes.app");
             ejecutarComandoShizuku("am crash com.android.systemui");
@@ -69,6 +71,39 @@ public class MainActivity extends AppCompatActivity {
             ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
+
+        // Escáner de diagnóstico 100% independiente
+        btnDiagnostico.setOnClickListener(v -> {
+            if (!Shizuku.pingBinder()) {
+                Toast.makeText(this, "Shizuku no está activo", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            try {
+                Process p = Shizuku.newProcess(new String[]{"sh", "-c", "cmd overlay list com.android.systemui"}, null, null);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                StringBuilder output = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("uithemes")) {
+                        output.append(line.trim()).append("\n");
+                    }
+                }
+                p.waitFor();
+                
+                String resultado = output.toString().trim();
+                if (resultado.isEmpty()) {
+                    resultado = "No se encontró el parche en el sistema. Android lo está ignorando por completo.";
+                }
+
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Diagnóstico del Parche")
+                        .setMessage(resultado)
+                        .setPositiveButton("Cerrar", null)
+                        .show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -83,17 +118,15 @@ public class MainActivity extends AppCompatActivity {
                 if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                     txtShizukuStatus.setText("Shizuku: Conectado");
                     txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
-                    Toast.makeText(this, "Shizuku ya está conectado", Toast.LENGTH_SHORT).show();
                 } else {
                     Shizuku.requestPermission(SHIZUKU_CODE);
                 }
             } else {
                 txtShizukuStatus.setText("Shizuku: Desconectado");
                 txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
-                Toast.makeText(this, "Inicia el servicio en la app de Shizuku", Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
         }
     }
 
@@ -112,24 +145,17 @@ public class MainActivity extends AppCompatActivity {
                 txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
             }
         } catch (Exception e) {
-            txtShizukuStatus.setText("Shizuku: Error de conexión");
-            txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
+            e.printStackTrace();
         }
     }
 
     private void ejecutarComandoShizuku(String comando) {
-        if (!Shizuku.pingBinder()) {
-            Toast.makeText(this, "Asegúrate de que Shizuku esté activo", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
             newProcessMethod.setAccessible(true);
             newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", comando}, null, null });
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -139,19 +165,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (lastCrash != null) {
             prefs.edit().remove("last_crash_log").apply();
-
             new MaterialAlertDialogBuilder(this)
                     .setTitle("⚠️ Log de Error Capturado")
                     .setMessage(lastCrash)
-                    .setPositiveButton("Copiar Log", (dialog, which) -> {
-                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("Crash Log", lastCrash);
-                        if (clipboard != null) {
-                            clipboard.setPrimaryClip(clip);
-                            Toast.makeText(this, "Log copiado", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .setNegativeButton("Cerrar", null)
+                    .setPositiveButton("Cerrar", null)
                     .show();
         }
     }
