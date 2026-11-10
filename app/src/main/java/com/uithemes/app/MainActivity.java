@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Capturador automático de crashes
+        // Capturador automático de errores
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             try {
                 StringWriter sw = new StringWriter();
@@ -45,12 +45,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         txtShizukuStatus = findViewById(R.id.txtShizukuStatus);
+        MaterialButton btnSolicitarPermiso = findViewById(R.id.btnSolicitarPermiso);
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
 
         mostrarCrashPrevio();
-        verificarPermisoShizuku();
+
+        // Botón manual para solicitar permisos o refrescar estado
+        btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
         btnActivar.setOnClickListener(v -> {
             String cmd = "settings put secure theme_customization_overlay_packages '{\"android.theme.customization.icon_pack.systemui\":\"com.uithemes.app\"}' && am crash com.android.systemui";
@@ -70,27 +73,30 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void mostrarCrashPrevio() {
-        SharedPreferences prefs = getSharedPreferences("crash_prefs", MODE_PRIVATE);
-        String lastCrash = prefs.getString("last_crash_log", null);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Re-verifica automáticamente el estado al regresar a la app
+        verificarPermisoShizuku();
+    }
 
-        if (lastCrash != null) {
-            // Elimina el registro para no volver a mostrarlo en futuros inicios normales
-            prefs.edit().remove("last_crash_log").apply();
-
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle("⚠️ Log de Error Capturado")
-                    .setMessage(lastCrash)
-                    .setPositiveButton("Copiar Log", (dialog, which) -> {
-                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("Crash Log", lastCrash);
-                        if (clipboard != null) {
-                            clipboard.setPrimaryClip(clip);
-                            Toast.makeText(this, "Log copiado al portapapeles", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .setNegativeButton("Cerrar", null)
-                    .show();
+    private void solicitarPermisoManualmente() {
+        try {
+            if (Shizuku.pingBinder()) {
+                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                    txtShizukuStatus.setText("Shizuku: Conectado");
+                    txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
+                    Toast.makeText(this, "Shizuku ya está conectado y autorizado", Toast.LENGTH_SHORT).show();
+                } else {
+                    Shizuku.requestPermission(SHIZUKU_CODE);
+                }
+            } else {
+                txtShizukuStatus.setText("Shizuku: Desconectado");
+                txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
+                Toast.makeText(this, "Inicia el servicio en la app de Shizuku primero", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -103,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     txtShizukuStatus.setText("Shizuku: Sin permiso");
                     txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"));
-                    Shizuku.requestPermission(SHIZUKU_CODE);
                 }
             } else {
                 txtShizukuStatus.setText("Shizuku: Desconectado");
@@ -128,6 +133,29 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void mostrarCrashPrevio() {
+        SharedPreferences prefs = getSharedPreferences("crash_prefs", MODE_PRIVATE);
+        String lastCrash = prefs.getString("last_crash_log", null);
+
+        if (lastCrash != null) {
+            prefs.edit().remove("last_crash_log").apply();
+
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("⚠️ Log de Error Capturado")
+                    .setMessage(lastCrash)
+                    .setPositiveButton("Copiar Log", (dialog, which) -> {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("Crash Log", lastCrash);
+                        if (clipboard != null) {
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(this, "Log copiado al portapapeles", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cerrar", null)
+                    .show();
         }
     }
 }
