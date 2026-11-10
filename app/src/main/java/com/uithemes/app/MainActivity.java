@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
                         .putString("last_crash_log", stackTrace)
                         .apply();
             } catch (Exception ignored) {}
-
             System.exit(1);
         });
 
@@ -53,23 +52,21 @@ public class MainActivity extends AppCompatActivity {
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // Activa el overlay y fuerza el reinicio de la barra de estado
+        // COMANDOS CORREGIDOS: Se usa pidof y kill -9 para un reinicio limpio sin ventana de error
         btnActivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay enable --user 0 com.uithemes.app && am crash com.android.systemui";
+            String cmd = "cmd overlay enable --user 0 com.uithemes.app; pidof com.android.systemui | xargs kill -9";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Aplicando tema e iconos...", Toast.LENGTH_SHORT).show();
         });
 
-        // Desactiva el overlay y reinicia SystemUI
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay disable --user 0 com.uithemes.app && am crash com.android.systemui";
+            String cmd = "cmd overlay disable --user 0 com.uithemes.app; pidof com.android.systemui | xargs kill -9";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
 
-        // Botón de herramientas / Reiniciar UI funcional
         btnReiniciarUI.setOnClickListener(v -> {
-            String cmd = "am crash com.android.systemui";
+            String cmd = "pidof com.android.systemui | xargs kill -9";
             ejecutarComandoShizuku(cmd);
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
