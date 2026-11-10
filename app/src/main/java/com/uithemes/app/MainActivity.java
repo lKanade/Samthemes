@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
                 throwable.printStackTrace(pw);
                 String stackTrace = sw.toString();
 
-                getSharedPreferences("crash_prefs", MODE_PRIVATE)
+                getSharedPreferences("crash_prefs", Context.MODE_PRIVATE)
                         .edit()
                         .putString("last_crash_log", stackTrace)
                         .apply();
@@ -52,22 +52,21 @@ public class MainActivity extends AppCompatActivity {
 
         btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
 
-        // Regresamos a los comandos originales que SÍ funcionaban
+        // COMANDOS SEPARADOS: Garantiza que el reinicio se ejecute sí o sí
         btnActivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay enable --user 0 com.uithemes.app && am crash com.android.systemui";
-            ejecutarComandoShizuku(cmd);
+            ejecutarComandoShizuku("cmd overlay enable --user 0 com.uithemes.app");
+            ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Aplicando tema e iconos...", Toast.LENGTH_SHORT).show();
         });
 
         btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay disable --user 0 com.uithemes.app && am crash com.android.systemui";
-            ejecutarComandoShizuku(cmd);
+            ejecutarComandoShizuku("cmd overlay disable --user 0 com.uithemes.app");
+            ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Desactivando tema...", Toast.LENGTH_SHORT).show();
         });
 
         btnReiniciarUI.setOnClickListener(v -> {
-            String cmd = "am crash com.android.systemui";
-            ejecutarComandoShizuku(cmd);
+            ejecutarComandoShizuku("am crash com.android.systemui");
             Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
         });
     }
@@ -135,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mostrarCrashPrevio() {
-        SharedPreferences prefs = getSharedPreferences("crash_prefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("crash_prefs", Context.MODE_PRIVATE);
         String lastCrash = prefs.getString("last_crash_log", null);
 
         if (lastCrash != null) {
@@ -149,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                         ClipData clip = ClipData.newPlainText("Crash Log", lastCrash);
                         if (clipboard != null) {
                             clipboard.setPrimaryClip(clip);
-                            Toast.makeText(this, "Log copiado al portapapeles", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Log copiado", Toast.LENGTH_SHORT).show();
                         }
                     })
                     .setNegativeButton("Cerrar", null)
