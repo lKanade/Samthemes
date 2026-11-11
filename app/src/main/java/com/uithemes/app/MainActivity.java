@@ -1,24 +1,37 @@
 package com.uithemes.app;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Method;
+
 import rikka.shizuku.Shizuku;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int SHIZUKU_CODE = 100;
+    private static final int SHIZUKU_REQUEST_CODE = 100;
     private TextView txtShizukuStatus;
+
+    private final Shizuku.OnRequestPermissionResultListener permissionResultListener =
+            (requestCode, grantResult) -> {
+                if (requestCode == SHIZUKU_REQUEST_CODE) {
+                    actualizarEstadoShizuku();
+                    Toast.makeText(
+                            this,
+                            grantResult == PackageManager.PERMISSION_GRANTED
+                                    ? "Permiso de Shizuku concedido"
+                                    : "Permiso de Shizuku denegado",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,94 +42,99 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnSolicitarPermiso = findViewById(R.id.btnSolicitarPermiso);
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
-        MaterialButton btnReiniciarUI = findViewById(R.id.btnReiniciarUI);
+        MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico);
 
-        btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoManualmente());
+        Shizuku.addRequestPermissionResultListener(permissionResultListener);
 
-        // Creación e inyección del Fabricated Overlay en tiempo de ejecución
-        btnActivar.setOnClickListener(v -> {
-            ejecutarFabricatedOverlay();
-            Toast.makeText(this, "Inyectando Fabricated Overlay...", Toast.LENGTH_SHORT).show();
-        });
+        btnSolicitarPermiso.setOnClickListener(v -> solicitarPermisoShizuku());
 
-        // Desactivar y eliminar el overlay virtual de la memoria
-        btnDesactivar.setOnClickListener(v -> {
-            String cmd = "cmd overlay remove --user 0 com.uithemes.fabricated.wifi && am crash com.android.systemui";
-            ejecutarComandoShizuku(cmd);
-            Toast.makeText(this, "Eliminando overlay virtual...", Toast.LENGTH_SHORT).show();
-        });
+        btnActivar.setOnClickListener(v ->
+                mostrarAviso("Generador RRO pendiente",
+                        "La aplicación todavía no genera ni instala overlays RRO. " +
+                        "No se ejecutará ningún comando sobre SystemUI hasta validar " +
+                        "los recursos y las políticas de overlay de este dispositivo."));
 
-        btnReiniciarUI.setOnClickListener(v -> {
-            ejecutarComandoShizuku("am crash com.android.systemui");
-            Toast.makeText(this, "Reiniciando SystemUI...", Toast.LENGTH_SHORT).show();
-        });
+        btnDesactivar.setOnClickListener(v ->
+                mostrarAviso("Sin overlays administrados",
+                        "Todavía no hay overlays RRO creados por esta aplicación para desactivar."));
+
+        btnDiagnostico.setOnClickListener(v -> mostrarDiagnostico());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        verificarPermisoShizuku();
+        actualizarEstadoShizuku();
     }
 
-    private void solicitarPermisoManualmente() {
-        try {
-            if (Shizuku.pingBinder()) {
-                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                    txtShizukuStatus.setText("Shizuku: Conectado");
-                    txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
-                } else {
-                    Shizuku.requestPermission(SHIZUKU_CODE);
-                }
-            } else {
-                txtShizukuStatus.setText("Shizuku: Desconectado");
-                txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Override
+    protected void onDestroy() {
+        Shizuku.removeRequestPermissionResultListener(permissionResultListener);
+        super.onDestroy();
     }
 
-    private void verificarPermisoShizuku() {
-        try {
-            if (Shizuku.pingBinder()) {
-                if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                    txtShizukuStatus.setText("Shizuku: Conectado");
-                    txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
-                } else {
-                    txtShizukuStatus.setText("Shizuku: Sin permiso");
-                    txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"));
-                }
-            } else {
-                txtShizukuStatus.setText("Shizuku: Desconectado");
-                txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void ejecutarFabricatedOverlay() {
+    private void solicitarPermisoShizuku() {
         if (!Shizuku.pingBinder()) {
-            Toast.makeText(this, "Shizuku no está activo", Toast.LENGTH_SHORT).show();
+            actualizarEstadoShizuku();
+            Toast.makeText(this, "Inicia Shizuku primero", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Comando nativo de Android para crear un Fabricated Overlay al vuelo sin APK
-        String comandoCrear = "cmd overlay fabricate --target com.android.systemui --name com.uithemes.fabricated.wifi com.android.systemui:id/wifi_icon 0x11 0x7f070001";
-        String comandoHabilitar = "cmd overlay enable --user 0 com.uithemes.fabricated.wifi";
-        String comandoReiniciar = "am crash com.android.systemui";
+        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+            actualizarEstadoShizuku();
+            Toast.makeText(this, "Shizuku ya tiene permiso", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        ejecutarComandoShizuku(comandoCrear + " && " + comandoHabilitar + " && " + comandoReiniciar);
+        Shizuku.requestPermission(SHIZUKU_REQUEST_CODE);
     }
 
-    private void ejecutarComandoShizuku(String comando) {
+    private void actualizarEstadoShizuku() {
+        if (txtShizukuStatus == null) return;
+
         try {
-            Method newProcessMethod = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
-            newProcessMethod.setAccessible(true);
-            newProcessMethod.invoke(null, new Object[]{ new String[]{"sh", "-c", comando}, null, null });
+            if (!Shizuku.pingBinder()) {
+                txtShizukuStatus.setText("Shizuku: Desconectado");
+                txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
+                return;
+            }
+
+            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                txtShizukuStatus.setText("Shizuku: Conectado · Permiso concedido");
+                txtShizukuStatus.setTextColor(Color.parseColor("#4CAF50"));
+            } else {
+                txtShizukuStatus.setText("Shizuku: Conectado · Falta permiso");
+                txtShizukuStatus.setTextColor(Color.parseColor("#FF9800"));
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error de ejecución: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            txtShizukuStatus.setText("Shizuku: Error al consultar estado");
+            txtShizukuStatus.setTextColor(Color.parseColor("#F44336"));
         }
+    }
+
+    private void mostrarDiagnostico() {
+        boolean binderActivo = Shizuku.pingBinder();
+        boolean permisoConcedido = binderActivo
+                && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED;
+
+        String diagnostico =
+                "Fabricante: " + Build.MANUFACTURER + "\n" +
+                "Modelo: " + Build.MODEL + "\n" +
+                "Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")\n" +
+                "Build: " + Build.DISPLAY + "\n" +
+                "Paquete: " + getPackageName() + "\n" +
+                "Shizuku Binder: " + (binderActivo ? "Activo" : "Inactivo") + "\n" +
+                "Permiso: " + (permisoConcedido ? "Concedido" : "No concedido") +
+                "\n\nLa instalación de RRO aún no está implementada.";
+
+        mostrarAviso("Diagnóstico del dispositivo", diagnostico);
+    }
+
+    private void mostrarAviso(String titulo, String mensaje) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titulo)
+                .setMessage(mensaje)
+                .setPositiveButton("Entendido", null)
+                .show();
     }
 }
