@@ -27,6 +27,11 @@ import java.util.List;
  *
  * <p>Cada dato del informe dice si está abierto, bloqueado por permiso
  * o no soportado, para no mostrar falsos positivos.</p>
+ *
+ * <p>Etapa 2: la consulta de themepark:// solo BROWSABLE se repite
+ * sin MATCH_DEFAULT_ONLY, porque ese flag excluía a DeepLinkActivity
+ * (su filtro no trae CATEGORY_DEFAULT bien escrito) y los dos 0 de
+ * la Etapa 1 eran un artefacto del test, no una prueba.</p>
  */
 @SuppressWarnings("deprecation")
 public final class ThemeDiagnostics {
@@ -83,8 +88,12 @@ public final class ThemeDiagnostics {
         sb.append("Ruta B (abrir la UI de ThemeDesigner): ")
                 .append("las actividades Customize, Preset, DeepLink y ")
                 .append("MainTheme están exportadas sin permiso en el ")
-                .append("manifest; abrirlas solo muestra la UI de Samsung, ")
-                .append("no aplica un tema por sí sola.\n");
+                .append("manifest, pero cada una exige un contrato de ")
+                .append("extras (Etapa 2): Customize necesita overlay_id, ")
+                .append("Preset necesita require_v2=true y un *_title, y ")
+                .append("DeepLink solo acepta themepark://reset_items/... ")
+                .append("o themepark://apply/... Abrirlas solo muestra la ")
+                .append("UI de Samsung, no aplica un tema por sí sola.\n");
         sb.append("Ruta C (RRO sobre SystemUI): ")
                 .append("SIN DEMOSTRAR en este dispositivo.\n");
         return sb.toString();
@@ -195,10 +204,23 @@ public final class ThemeDiagnostics {
         deepLinkDefault.addCategory(Intent.CATEGORY_BROWSABLE);
         sb.append("themepark:// con DEFAULT: ")
                 .append(describeResolution(pm, deepLinkDefault)).append("\n");
+        // Etapa 2, corrección: las dos consultas anteriores usan
+        // MATCH_DEFAULT_ONLY, que excluye a DeepLinkActivity porque
+        // su filtro no trae CATEGORY_DEFAULT bien escrito. Esta
+        // tercera consulta, sin ese flag, es la prueba adecuada de
+        // si solo BROWSABLE resuelve.
+        Intent deepLinkNoFlag = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("themepark://"));
+        deepLinkNoFlag.addCategory(Intent.CATEGORY_BROWSABLE);
+        sb.append("themepark:// solo BROWSABLE (sin MATCH_DEFAULT_ONLY): ")
+                .append(describeResolution(pm, deepLinkNoFlag, 0))
+                .append("\n");
         sb.append("Nota: el manifest de DeepLinkActivity trae la categoría ")
                 .append("escrita como 'android.intent.cateygory.DEFAULT'. ")
-                .append("Si la resolución con DEFAULT da 0 y solo BROWSABLE ")
-                .append("resuelve, ese typo es la causa.\n");
+                .append("Como startActivity() añade CATEGORY_DEFAULT a los ")
+                .append("intents implícitos, el enlace implícito themepark:// ")
+                .append("no resuelve por ese typo, aunque la consulta sin ")
+                .append("MATCH_DEFAULT_ONLY sí debería encontrarla.\n");
 
         Intent sendImage = new Intent(Intent.ACTION_SEND);
         sendImage.setType("image/*");
@@ -249,9 +271,14 @@ public final class ThemeDiagnostics {
     }
 
     private static String describeResolution(PackageManager pm, Intent intent) {
+        return describeResolution(pm, intent, PackageManager.MATCH_DEFAULT_ONLY);
+    }
+
+    private static String describeResolution(PackageManager pm, Intent intent,
+                                             int flags) {
         try {
             List<ResolveInfo> matches =
-                    pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                    pm.queryIntentActivities(intent, flags);
             if (matches == null || matches.isEmpty()) {
                 return "0 actividades resuelven este intent.";
             }

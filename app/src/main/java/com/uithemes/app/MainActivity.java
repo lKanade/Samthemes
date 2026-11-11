@@ -77,10 +77,17 @@ public class MainActivity extends AppCompatActivity {
                     ThemeDiagnostics.THEME_DESIGNER,
                     "com.samsung.android.themedesigner.ui.view.CustomizeComposeActivity"));
             intent.addCategory(Intent.CATEGORY_DEFAULT);
+            // Etapa 2: sin este extra, OverlayCreateTask.init devuelve
+            // -4 y ThemeDesigner muestra "Unable to perform action.
+            // Please close Theme Park and try again." overlay_id=2 es
+            // VolumePanel (target com.android.systemui) según
+            // Layouts.get(2) en el dex de ThemeDesigner.
+            intent.putExtra("overlay_id", 2);
             pedirConfirmacionApertura("Abrir Customize de ThemeDesigner",
-                    "Solo abre la interfaz de personalización de Samsung. "
-                            + "No aplica ningún tema por sí sola. Puedes volver "
-                            + "con el botón Atrás.", intent);
+                    "Abre el editor de VolumePanel de Samsung "
+                            + "(overlay_id=2, target com.android.systemui). "
+                            + "Solo abre la interfaz, no aplica ningún tema. "
+                            + "Puedes volver con el botón Atrás.", intent);
         });
 
         btnAbrirPreset.setOnClickListener(v -> {
@@ -90,22 +97,39 @@ public class MainActivity extends AppCompatActivity {
                     ThemeDiagnostics.THEME_DESIGNER,
                     "com.samsung.android.themedesigner.ui.view.PresetComposeActivity"));
             intent.addCategory(Intent.CATEGORY_DEFAULT);
-            pedirConfirmacionApertura("Abrir QuickStar de ThemeDesigner",
-                    "Solo abre la sección QuickStar de Samsung. "
-                            + "No aplica ningún tema por sí sola. Puedes volver "
-                            + "con el botón Atrás.", intent);
+            // Etapa 2: sin require_v2=true, PresetComposeActivity
+            // muestra "This is an unsupported version..." y termina;
+            // sin quickstar_title, PresetViewModel.init devuelve null.
+            // Esto CREA un preset de prueba llamado "UITest" en
+            // Theme Park (autorizado por Adrian el 2026-11-11). Se
+            // puede borrar después desde Theme Park.
+            intent.putExtra("require_v2", true);
+            intent.putExtra("quickstar_title", "UITest");
+            pedirConfirmacionApertura("Crear preset de prueba QuickStar",
+                    "Pide a ThemeDesigner crear un preset de prueba "
+                            + "llamado \"UITest\". No aplica ningún tema, "
+                            + "pero sí crea ese preset en Theme Park; se "
+                            + "puede borrar después desde Theme Park.",
+                    intent);
         });
 
         btnAbrirDeepLink.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("themepark://"));
+                    Uri.parse("themepark://reset_items/themes"));
+            // Etapa 2: lanzamiento EXPLÍCITO. El enlace implícito
+            // themepark:// nunca resuelve porque startActivity()
+            // añade CATEGORY_DEFAULT y el filtro de DeepLinkActivity
+            // la trae mal escrita ("cateygory"). handleDeepLink solo
+            // acepta themepark://reset_items/themes o .../appicon.
+            intent.setComponent(new ComponentName(
+                    ThemeDiagnostics.THEME_DESIGNER,
+                    "com.samsung.android.themedesigner.DeepLinkActivity"));
             intent.addCategory(Intent.CATEGORY_BROWSABLE);
             pedirConfirmacionApertura("Probar deep link themepark://",
-                    "Prueba si DeepLinkActivity resuelve un enlace "
-                            + "themepark:// solo con la categoría BROWSABLE. "
-                            + "El manifest trae mal escrita la categoría "
-                            + "DEFAULT, así que esta prueba distingue ese caso. "
-                            + "Solo abre la interfaz de Samsung.", intent);
+                    "Abre la lista de reseteo de temas de Theme Park "
+                            + "(themepark://reset_items/themes). Solo abre "
+                            + "esa lista; no resetea nada por sí sola. "
+                            + "Puedes volver con el botón Atrás.", intent);
         });
     }
 

@@ -162,7 +162,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Abrir QuickStar"
+                    android:text="Crear preset QuickStar (UITest)"
                     app:backgroundTint="#757575" />
 
                 <com.google.android.material.button.MaterialButton
