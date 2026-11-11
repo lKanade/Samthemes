@@ -14,18 +14,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SamThemes Engine"
+            android:layout_marginTop="16dp"
+            android:text="UI Themes Engine"
             android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Gestor de parches visuales para One UI"
-            android:textSize="14sp"
+            android:layout_marginBottom="24dp"
+            android:text="Gestor de temas y recursos visuales para One UI"
             android:textColor="?android:attr/textColorSecondary"
-            android:layout_marginBottom="24dp" />
+            android:textSize="14sp" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -37,17 +37,17 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
+                android:padding="16dp">
 
                 <TextView
                     android:id="@+id/txtShizukuStatus"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Shizuku: Verificando..."
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
@@ -75,18 +75,18 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Barra de Estado &amp; Accesos Rápidos"
+                    android:text="Barra de estado y accesos rápidos"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Aplica los íconos y modificaciones en SystemUI"
-                    android:textSize="13sp"
-                    android:textColor="?android:attr/textColorSecondary"
                     android:layout_marginTop="4dp"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="16dp"
+                    android:text="La generación e instalación de overlays RRO está en desarrollo."
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="13sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -96,18 +96,18 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnActivar"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Aplicar Tema"
-                        android:layout_marginEnd="6dp" />
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:text="Aplicar tema" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnDesactivar"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Desactivar"
                         android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:text="Desactivar"
                         app:backgroundTint="#757575" />
                 </LinearLayout>
             </LinearLayout>
@@ -128,25 +128,16 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
                     android:text="Herramientas"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:textStyle="bold" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnReiniciarUI"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Reiniciar SystemUI"
-                    app:backgroundTint="#3F51B5" />
-                    
-                <!-- Nuevo botón de diagnóstico interno -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDiagnostico"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Ver Estado del Parche"
-                    android:layout_marginTop="8dp"
+                    android:text="Diagnóstico del dispositivo"
                     app:backgroundTint="#FF9800" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
