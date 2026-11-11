@@ -1,5 +1,6 @@
 package com.uithemes.app;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -11,6 +12,8 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
@@ -22,6 +25,48 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int SHIZUKU_REQUEST_CODE = 100;
     private TextView txtShizukuStatus;
+
+    // Etapa 3: el uid del preset UITest. Lo devuelve PresetComposeActivity
+    // en su resultado (extras "result", "package_name", "uid"); sin él,
+    // el botón de aplicar usa el uid construido con la fórmula de
+    // OverlayCreateTask.save() (ver FALLBACK_PRESET_UID).
+    private String presetUid;
+    private boolean presetUidFromResult;
+
+    // Ruta construida del preset UITest (respaldo si Preset no devuelve
+    // el uid). El prefijo de filesDir es el convencional de ThemeDesigner;
+    // si es incorrecto, checkPreCondition muestra theme_not_found y no
+    // se aplica nada.
+    private static final String FALLBACK_PRESET_UID =
+            "frro/NotificationPanel/data/user/0/com.samsung.android.themedesigner/files"
+                    + "/overlay_quickstar/saved/UITest";
+
+    private final ActivityResultLauncher<Intent> presetLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == Activity.RESULT_OK
+                                && result.getData() != null) {
+                            Intent data = result.getData();
+                            presetUid = data.getStringExtra("uid");
+                            presetUidFromResult = presetUid != null;
+                            if (presetUid != null) {
+                                ThemeDiagnostics.setPresetUid(presetUid, true);
+                                Toast.makeText(this,
+                                        "Preset creado, uid: " + presetUid,
+                                        Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(this,
+                                        "Preset terminó bien pero sin uid",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Toast.makeText(this,
+                                    "Preset terminó sin resultado "
+                                            + "(uid no recibido)",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
 
     private final Shizuku.OnRequestPermissionResultListener permissionResultListener =
             (requestCode, grantResult) -> {
@@ -50,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnDiagnosticoTemas = findViewById(R.id.btnDiagnosticoTemas);
         MaterialButton btnAbrirCustomize = findViewById(R.id.btnAbrirCustomize);
         MaterialButton btnAbrirPreset = findViewById(R.id.btnAbrirPreset);
+        MaterialButton btnAplicarPreset = findViewById(R.id.btnAplicarPreset);
         MaterialButton btnAbrirDeepLink = findViewById(R.id.btnAbrirDeepLink);
 
         Shizuku.addRequestPermissionResultListener(permissionResultListener);
@@ -103,15 +149,27 @@ public class MainActivity extends AppCompatActivity {
             // Esto CREA un preset de prueba llamado "UITest" en
             // Theme Park (autorizado por Adrian el 2026-11-11). Se
             // puede borrar después desde Theme Park.
+            // Etapa 3: se lanza con ActivityResultLauncher para
+            // capturar el uid que devuelve Preset (extras "result",
+            // "package_name", "uid"), y se envían colores distintivos
+            // (fondo rojo, texto blanco) porque el preset de la Etapa 2
+            // se creó con todos los colores en 0 y aplicar ese preset
+            // no se notaría a simple vista.
             intent.putExtra("require_v2", true);
             intent.putExtra("quickstar_title", "UITest");
-            pedirConfirmacionApertura("Crear preset de prueba QuickStar",
+            intent.putExtra("quickstar_body_color", 0xFFD32F2F);
+            intent.putExtra("quickstar_body_text_color", 0xFFFFFFFF);
+            pedirConfirmacionPreset("Crear preset de prueba QuickStar",
                     "Pide a ThemeDesigner crear un preset de prueba "
-                            + "llamado \"UITest\". No aplica ningún tema, "
+                            + "llamado \"UITest\" con fondo rojo y texto "
+                            + "blanco, para que aplicar el preset se note "
+                            + "a simple vista. No aplica ningún tema, "
                             + "pero sí crea ese preset en Theme Park; se "
                             + "puede borrar después desde Theme Park.",
                     intent);
         });
+
+        btnAplicarPreset.setOnClickListener(v -> pedirConfirmacionAplicar());
 
         btnAbrirDeepLink.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_VIEW,
@@ -218,6 +276,61 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage(mensaje)
                 .setPositiveButton("Abrir", (dialog, which) ->
                         lanzarActividadSegura(intent))
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void pedirConfirmacionPreset(String titulo, String mensaje,
+                                         Intent intent) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titulo)
+                .setMessage(mensaje)
+                .setPositiveButton("Crear", (dialog, which) -> {
+                    try {
+                        presetLauncher.launch(intent);
+                    } catch (ActivityNotFoundException e) {
+                        mostrarAviso("No se pudo abrir",
+                                "Ninguna actividad resolvió este intent en el dispositivo.");
+                    } catch (SecurityException e) {
+                        mostrarAviso("Bloqueado por permiso",
+                                "La actividad existe pero exige un permiso que esta "
+                                        + "aplicación no tiene: " + e.getMessage());
+                    } catch (Exception e) {
+                        mostrarAviso("Error al abrir",
+                                "No se pudo abrir la actividad: " + e.getMessage());
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void pedirConfirmacionAplicar() {
+        // Etapa 3: el apply lo ejecuta ThemeDesigner en su propio proceso
+        // (tiene MODIFY_THEME); nuestra app solo dispara el deep link
+        // ACTION_APPLY con el uid. Es el mismo call("apply", uid, null)
+        // que usa la UI de Theme Park al tocar un preset.
+        String uid = presetUid != null ? presetUid : FALLBACK_PRESET_UID;
+        String origenUid = presetUidFromResult
+                ? "uid recibido de Preset"
+                : "uid construido (no confirmado por Preset todavía)";
+        String mensaje = "Esto CAMBIA el aspecto del Quick Panel del "
+                + "teléfono (aplica el preset UITest). Es una "
+                + "modificación del sistema.\n\n" + origenUid + ":\n" + uid
+                + "\n\nPara revertirlo: Theme Park → pestaña Quick panel "
+                + "→ UITest → desaplicar/borrar, o aplicar el tema por "
+                + "defecto.";
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Aplicar preset UITest")
+                .setMessage(mensaje)
+                .setPositiveButton("Aplicar", (dialog, which) -> {
+                    Intent intent = new Intent(
+                            "com.samsung.android.themedesigner.ACTION_APPLY",
+                            Uri.parse("themepark://apply/" + uid));
+                    intent.setComponent(new ComponentName(
+                            ThemeDiagnostics.THEME_DESIGNER,
+                            "com.samsung.android.themedesigner.DeepLinkActivity"));
+                    lanzarActividadSegura(intent);
+                })
                 .setNegativeButton("Cancelar", null)
                 .show();
     }

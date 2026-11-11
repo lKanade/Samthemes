@@ -5,7 +5,57 @@ personalizaciones visuales de Samsung One UI sin root, usando Shizuku.
 
 Repositorio de trabajo: rama `ui-themes-engine-build`. No modificar `main`.
 
-## Estado actual — Etapa 2 (contratos de extras de ThemeDesigner)
+## Estado actual — Etapa 3 (aplicar un preset por uid)
+
+La Etapa 2 se verificó en el teléfono: el diagnóstico corregido
+resuelve 1 actividad, el preset "UITest" se creó en Theme Park,
+y el deep link explícito abrió Theme Park. Customize con
+`overlay_id=2` cerró la app sola tras dibujar una cuadrícula
+(la Etapa 3 refutó la sospecha de `getOverlayId()`: el id 3 es
+un caso legal; el crash está después de `setContent`, pendiente
+de logcat).
+
+La Etapa 3 investigó el bytecode de ThemeDesigner y encontró el
+camino de apply, comprobado en código:
+
+- **El uid es una ruta**: `OverlayCreateTask.save()` devuelve
+  `"frro/" + overlayName + dir.path`, es decir, para UITest
+  `frro/NotificationPanel<filesDir>/overlay_quickstar/saved/UITest`.
+  `PresetComposeActivity` lo devuelve en su resultado (extras
+  `result`, `package_name`, `uid`), que la Etapa 2 perdía por
+  usar `startActivity`.
+- **El apply lo ejecuta ThemeDesigner**: `DeepLinkActivity` con
+  la acción `com.samsung.android.themedesigner.ACTION_APPLY` y
+  la URI `themepark://apply/<uid>` comprueba la precondición
+  (existe el fichero, ThemeManager libre) y llama por
+  `ContentResolver.call` a su propio `ThemeProvider` (método
+  `"apply"`, arg = uid). Es el mismo call que usa la propia UI
+  de Theme Park al tocar un preset (`ContentListViewModel.
+  applyItem`). Nuestra app no necesita `MODIFY_THEME` porque
+  solo dispara el deep link; la llamada directa al provider
+  desde fuera sigue bloqueada por ese permiso. `ACTION_APPLY`
+  no tiene intent-filter, así que el lanzamiento debe ser
+  explícito.
+- **Cambios de esta etapa**: el botón de Preset ahora usa un
+  `ActivityResultLauncher` para capturar el uid, y crea el
+  preset con colores distintivos (fondo rojo
+  `quickstar_body_color=0xFFD32F2F`, texto blanco), porque el
+  preset de la Etapa 2 se creó con todos los colores en 0 y
+  aplicar ese preset no se notaría. Nuevo botón "Aplicar preset
+  UITest": lanza `DeepLinkActivity` explícita con `ACTION_APPLY`
+  y `themepark://apply/<uid>` (el uid recibido, o el construido
+  con la fórmula si Preset no lo devolvió), siempre tras un
+  diálogo de confirmación. El diagnóstico muestra el último uid
+  conocido.
+- **Advertencia**: aplicar el preset SÍ modifica el sistema
+  (cambia los colores del Quick Panel). La prueba en teléfono
+  solo debe hacerse con autorización explícita, y la reversión
+  es manual desde Theme Park (pestaña Quick panel → UITest →
+  desaplicar/borrar, o aplicar el tema por defecto); nuestra app
+  no puede desaplicar por sí misma, porque no hay deep link de
+  `unapply` y el `call` directo está bloqueado.
+
+## Estado anterior — Etapa 2 (contratos de extras de ThemeDesigner)
 
 La Etapa 1 se verificó en el teléfono (SM-S928B, Android 17): el
 diagnóstico coincidía con el manifest, pero abrir Customize y
@@ -102,10 +152,17 @@ El APK se publica como artefacto `UI-Themes-Engine-Debug-APK`.
    que `themepark://` solo BROWSABLE sin `MATCH_DEFAULT_ONLY`
    resuelve 1 actividad (antes daba 0 por el flag).
 4. Pulsar "Abrir Customize" y comprobar si se abre el editor de
-   VolumePanel (si vuelve a salir el toast de Theme Park, el
-   `overlay_id=2` no bastó; reportar el mensaje exacto).
+   VolumePanel. En la Etapa 2 la app se cerró sola tras dibujar
+   una cuadrícula (sin toast); la Etapa 3 refutó que fuera el
+   chequeo de `getOverlayId()`, así que la causa sigue pendiente
+   de logcat.
 5. Pulsar "Crear preset de prueba QuickStar" y comprobar si se crea
    el preset "UITest" en Theme Park (se puede borrar después desde
-   Theme Park).
+   Theme Park) y si el diagnóstico muestra el uid recibido, con el
+   formato `frro/NotificationPanel/.../overlay_quickstar/saved/UITest`.
 6. Pulsar "Probar themepark://" y comprobar si se abre la lista de
    reseteo de temas (salir con Atrás sin confirmar nada).
+7. SOLO con autorización explícita: pulsar "Aplicar preset UITest",
+   confirmar el diálogo y comprobar si el Quick Panel cambia a
+   fondo rojo. Para revertir: Theme Park → pestaña Quick panel →
+   UITest → desaplicar/borrar, o aplicar el tema por defecto.

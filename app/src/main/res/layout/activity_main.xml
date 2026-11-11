@@ -138,7 +138,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="16dp"
-                    android:text="Consulta qué componentes de ThemeCenter y ThemeDesigner están abiertos o bloqueados. Abrir una actividad solo muestra la interfaz de Samsung, no aplica ningún tema."
+                    android:text="Consulta qué componentes de ThemeCenter y ThemeDesigner están abiertos o bloqueados. Abrir una actividad muestra la interfaz de Samsung; el botón «Aplicar preset UITest» sí cambia el aspecto del Quick Panel, porque aplica el preset en Theme Park."
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="13sp" />
 
@@ -163,6 +163,14 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:text="Crear preset QuickStar (UITest)"
+                    app:backgroundTint="#757575" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAplicarPreset"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Aplicar preset UITest"
                     app:backgroundTint="#757575" />
 
                 <com.google.android.material.button.MaterialButton

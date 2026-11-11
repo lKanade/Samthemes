@@ -32,6 +32,11 @@ import java.util.List;
  * sin MATCH_DEFAULT_ONLY, porque ese flag excluía a DeepLinkActivity
  * (su filtro no trae CATEGORY_DEFAULT bien escrito) y los dos 0 de
  * la Etapa 1 eran un artefacto del test, no una prueba.</p>
+ *
+ * <p>Etapa 3: el informe muestra el último uid de preset recibido
+ * de PresetComposeActivity (ver {@link #setPresetUid}), que es el
+ * que usa el botón de aplicar. El diagnóstico en sí sigue siendo
+ * de solo lectura.</p>
  */
 @SuppressWarnings("deprecation")
 public final class ThemeDiagnostics {
@@ -45,6 +50,16 @@ public final class ThemeDiagnostics {
 
     private static final Uri THEME_INFO_STATS_URI = Uri.parse(
             "content://com.samsung.android.themecenter.info.provider/stats");
+
+    // Etapa 3: último uid de preset UITest conocido ("sin uid todavía"
+    // hasta que Preset devuelva su resultado). Lo fija MainActivity.
+    private static String presetUidLine = "sin uid todavía";
+
+    /** Registra el uid del preset UITest para mostrarlo en el informe. */
+    public static void setPresetUid(String uid, boolean fromResult) {
+        presetUidLine = uid + (fromResult ? " (recibido de Preset)"
+                : " (construido, no confirmado)");
+    }
 
     private ThemeDiagnostics() {
     }
@@ -82,6 +97,13 @@ public final class ThemeDiagnostics {
         appendIntentResolution(sb, pm);
         appendThemeInfoProvider(sb, context);
 
+        sb.append("=== Preset UITest (Etapa 3) ===\n");
+        sb.append("uid: ").append(presetUidLine).append("\n");
+        sb.append("El uid lo devuelve PresetComposeActivity en su resultado; "
+                + "sin él, el botón de aplicar usa el uid construido con la "
+                + "fórmula frro/NotificationPanel<filesDir>/overlay_quickstar"
+                + "/saved/UITest.\n\n");
+
         sb.append("=== Conclusión (según estos datos) ===\n");
         sb.append("Ruta A (Binder directo a ThemeManagerService): ")
                 .append("BLOQUEADA por MODIFY_THEME.\n");
@@ -93,7 +115,12 @@ public final class ThemeDiagnostics {
                 .append("Preset necesita require_v2=true y un *_title, y ")
                 .append("DeepLink solo acepta themepark://reset_items/... ")
                 .append("o themepark://apply/... Abrirlas solo muestra la ")
-                .append("UI de Samsung, no aplica un tema por sí sola.\n");
+                .append("UI de Samsung, no aplica un tema por sí sola. ")
+                .append("Etapa 3: DeepLinkActivity con ACTION_APPLY y ")
+                .append("themepark://apply/<uid> sí aplica un preset; el ")
+                .append("apply lo ejecuta ThemeDesigner en su proceso ")
+                .append("(tiene MODIFY_THEME) y es el mismo call que usa ")
+                .append("su propia UI al tocar un preset.\n");
         sb.append("Ruta C (RRO sobre SystemUI): ")
                 .append("SIN DEMOSTRAR en este dispositivo.\n");
         return sb.toString();
