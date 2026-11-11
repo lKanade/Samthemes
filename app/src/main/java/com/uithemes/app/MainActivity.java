@@ -1,7 +1,11 @@
 package com.uithemes.app;
 
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -43,6 +47,10 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnActivar = findViewById(R.id.btnActivar);
         MaterialButton btnDesactivar = findViewById(R.id.btnDesactivar);
         MaterialButton btnDiagnostico = findViewById(R.id.btnDiagnostico);
+        MaterialButton btnDiagnosticoTemas = findViewById(R.id.btnDiagnosticoTemas);
+        MaterialButton btnAbrirCustomize = findViewById(R.id.btnAbrirCustomize);
+        MaterialButton btnAbrirPreset = findViewById(R.id.btnAbrirPreset);
+        MaterialButton btnAbrirDeepLink = findViewById(R.id.btnAbrirDeepLink);
 
         Shizuku.addRequestPermissionResultListener(permissionResultListener);
 
@@ -59,6 +67,46 @@ public class MainActivity extends AppCompatActivity {
                         "Todavía no hay overlays RRO creados por esta aplicación para desactivar."));
 
         btnDiagnostico.setOnClickListener(v -> mostrarDiagnostico());
+
+        btnDiagnosticoTemas.setOnClickListener(v -> ejecutarDiagnosticoTemas());
+
+        btnAbrirCustomize.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    "com.samsung.android.themedesigner.CustomizeActivity.new");
+            intent.setComponent(new ComponentName(
+                    ThemeDiagnostics.THEME_DESIGNER,
+                    "com.samsung.android.themedesigner.ui.view.CustomizeComposeActivity"));
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            pedirConfirmacionApertura("Abrir Customize de ThemeDesigner",
+                    "Solo abre la interfaz de personalización de Samsung. "
+                            + "No aplica ningún tema por sí sola. Puedes volver "
+                            + "con el botón Atrás.", intent);
+        });
+
+        btnAbrirPreset.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    "com.samsung.android.themedesigner.quickstar");
+            intent.setComponent(new ComponentName(
+                    ThemeDiagnostics.THEME_DESIGNER,
+                    "com.samsung.android.themedesigner.ui.view.PresetComposeActivity"));
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            pedirConfirmacionApertura("Abrir QuickStar de ThemeDesigner",
+                    "Solo abre la sección QuickStar de Samsung. "
+                            + "No aplica ningún tema por sí sola. Puedes volver "
+                            + "con el botón Atrás.", intent);
+        });
+
+        btnAbrirDeepLink.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("themepark://"));
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            pedirConfirmacionApertura("Probar deep link themepark://",
+                    "Prueba si DeepLinkActivity resuelve un enlace "
+                            + "themepark:// solo con la categoría BROWSABLE. "
+                            + "El manifest trae mal escrita la categoría "
+                            + "DEFAULT, así que esta prueba distingue ese caso. "
+                            + "Solo abre la interfaz de Samsung.", intent);
+        });
     }
 
     @Override
@@ -128,6 +176,42 @@ public class MainActivity extends AppCompatActivity {
                 "\n\nLa instalación de RRO aún no está implementada.";
 
         mostrarAviso("Diagnóstico del dispositivo", diagnostico);
+    }
+
+    private void ejecutarDiagnosticoTemas() {
+        Toast.makeText(this, "Ejecutando diagnóstico de temas…",
+                Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            String informe = ThemeDiagnostics.run(this);
+            runOnUiThread(() -> mostrarAviso("Diagnóstico de temas", informe));
+        }).start();
+    }
+
+    private void pedirConfirmacionApertura(String titulo, String mensaje,
+                                           Intent intent) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titulo)
+                .setMessage(mensaje)
+                .setPositiveButton("Abrir", (dialog, which) ->
+                        lanzarActividadSegura(intent))
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void lanzarActividadSegura(Intent intent) {
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            mostrarAviso("No se pudo abrir",
+                    "Ninguna actividad resolvió este intent en el dispositivo.");
+        } catch (SecurityException e) {
+            mostrarAviso("Bloqueado por permiso",
+                    "La actividad existe pero exige un permiso que esta "
+                            + "aplicación no tiene: " + e.getMessage());
+        } catch (Exception e) {
+            mostrarAviso("Error al abrir",
+                    "No se pudo abrir la actividad: " + e.getMessage());
+        }
     }
 
     private void mostrarAviso(String titulo, String mensaje) {

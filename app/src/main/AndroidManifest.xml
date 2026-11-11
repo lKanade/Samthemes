@@ -5,6 +5,12 @@
 
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- Solo para el diagnóstico de solo lectura de la Etapa 1:
+             PackageManager necesita ver estos paquetes para informar
+             de sus componentes. No concede ningún permiso. -->
+        <package android:name="com.samsung.android.themecenter" />
+        <package android:name="com.samsung.android.themedesigner" />
+        <package android:name="com.samsung.android.themestore" />
     </queries>
 
     <application
