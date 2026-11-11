@@ -7,21 +7,11 @@
         <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
-    <overlay
-        android:targetPackage="com.android.systemui"
-        android:targetName="SystemUI"
-        android:isStatic="false"
-        android:priority="99" />
-
     <application
         android:allowBackup="true"
         android:label="UI Themes Engine"
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
-
-        <meta-data
-            android:name="com.google.android.theme.customization.overlay_definition"
-            android:value="true" />
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
@@ -41,5 +31,4 @@
         </activity>
 
     </application>
-
 </manifest>
